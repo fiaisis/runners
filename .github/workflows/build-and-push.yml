@@ -40,6 +40,8 @@ jobs:
           else
             echo "build_latest_version=" >> "$GITHUB_OUTPUT"
           fi
+          
+          echo "Outputs: $GITHUB_OUTPUT"
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
