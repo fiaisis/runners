@@ -1,0 +1,85 @@
+---
+name: Check for new runners and build a new mantid one
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}
+
+jobs:
+  mantid-runner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.1
+
+      - name: Find latest release, check if it's in the bash file, add a new one.
+        id: latest_version
+        run: |
+          # Get latest release
+          TAG=$(curl -s https://api.github.com/repos/mantidproject/mantid/releases/latest | jq -r '.tag_name')
+          TAG="${TAG:1}"
+          
+          # Get already made versions
+          TOKEN=$(curl --location --request GET 'https://ghcr.io/token?scope=repository:fiaisis/mantid:pull' | jq -r '.token')
+          CONTAINER_VERSIONS=$(curl --location --request GET 'https://ghcr.io/v2/fiaisis/mantid/tags/list' --header 'Authorization: Bearer $TOKEN' | jq -r '.tags')
+          
+          # If tag already in container versions end here, else build
+          if [[ $CONTAINER_VERSIONS == *"TAG"* ]]; then
+            echo "build_latest_version=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_latest_version=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.WRITE_PACKAGE_TOKEN }}
+
+      - name: Build and push mantid runner docker image
+        id: docker_build
+        uses: docker/build-push-action@v5
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          file: ./mantid/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}
+
+      - name: Remove sha256 from the builds digest
+        id: remove_sha256
+        run: |
+          DIGEST=${{ steps.docker_build.outputs.digest }}
+          FILTERED_DIGEST=${DIGEST#sha256:}
+          echo "::set-output name=digest::$FILTERED_DIGEST"
+
+      - name: Checkout the Gitops repository
+        uses: actions/checkout@v4
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          repository: fiaisis/gitops
+          token: ${{ secrets.GITOPS_STAGING_EDIT_TOKEN }}
+
+      - name: Edit the YAML jobcreator.yml file for staging for adding runners
+        uses: mikefarah/yq@v4.44.1
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "DEFAULT_RUNNER_SHA").value = "${{ steps.remove_sha256.outputs.digest }}")' './components/jobcreator/envs/staging/jobcreator.yml'
+
+      - name: Commit and push changes
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "[CD] Update run-detection with this commit ${{ github.event.head_commit.url}}"
+          git push
