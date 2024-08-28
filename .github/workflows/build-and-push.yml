@@ -32,6 +32,8 @@ jobs:
           TOKEN=$(curl --location --request GET 'https://ghcr.io/token?scope=repository:fiaisis/mantid:pull' | jq -r '.token')
           CONTAINER_VERSIONS=$(curl --location --request GET 'https://ghcr.io/v2/fiaisis/mantid/tags/list' --header 'Authorization: Bearer $TOKEN' | jq -r '.tags')
           
+          echo "Versions found: $CONTAINER_VERSIONS, tag found: $TAG"
+          
           # If tag already in container versions end here, else build
           if [[ $CONTAINER_VERSIONS == *"TAG"* ]]; then
             echo "build_latest_version=$TAG" >> "$GITHUB_OUTPUT"
