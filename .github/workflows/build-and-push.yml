@@ -2,9 +2,8 @@
 name: Check for new runners and build a new mantid one
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "18 14 * * *"
 
 env:
   REGISTRY: ghcr.io
@@ -83,5 +82,5 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -am "[CD] Update run-detection with this commit ${{ github.event.head_commit.url}}"
+          git commit -am "[CD] Update jobcreator with this commit ${{ github.event.head_commit.url}}"
           git push
