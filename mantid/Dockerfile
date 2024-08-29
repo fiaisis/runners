@@ -8,7 +8,7 @@ ARG MANTID_VERSION
 RUN mamba create -y -n mantid -c mantid -c conda-forge mantid=${MANTID_VERSION} requests
 
 # Install custom properties
-COPY ./Mantid/Mantid.user.properties /root/.mantid/Mantid.user.properties
+COPY ./mantid/Mantid.user.properties /root/.mantid/Mantid.user.properties
 
 # Make sure the environment is activated:
 RUN conda init bash
