@@ -7,7 +7,7 @@ on:
   push:
 
 jobs:
-  mantid-runner:
+  activity:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,10 +20,9 @@ jobs:
       - name: Replace credentials
         run: |
           sed -i 's/Last updated: /Last updated: $(date)/g' README.md
-
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "active@stfc.ac.uk"
-          git config --local user.name "Most Active User"
-          git commit -am "I promise this is active"
-          git push
+      
+      - uses: EndBug/add-and-commit@v9
+        with:
+          message: activity
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
