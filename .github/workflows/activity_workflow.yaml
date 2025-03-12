@@ -10,8 +10,7 @@ jobs:
   activity:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
 
     steps:
       - name: Check out code
