@@ -4,6 +4,7 @@ name: Check for new runners and build a new mantid one
 on:
   schedule:
     - cron: "18 14 * * *"
+  push:
 
 env:
   REGISTRY: ghcr.io
