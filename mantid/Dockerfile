@@ -16,7 +16,10 @@ RUN echo "conda activate mantid" > ~/.bashrc
 ENV PATH /opt/conda/envs/mantid/bin:$PATH
 
 # Run the DownloadInstrument algorithm to get instrument definitions
-RUN python -c "from mantid.simpleapi import DownloadInstrument;DownloadInstrument()"
+RUN rm -rf /opt/conda/envs/mantid/instrument
+RUN git clone https://github.com/mantidproject/mantid /tmp/mantid
+RUN cp -rf /tmp/mantid/instrument /opt/conda/envs/mantid/instrument
+RUN rm -rf /tmp/mantid
 
 # Create a shell script to run the python command:
 RUN echo '#!/bin/bash\npython -c "$@"' > /entrypoint.sh
