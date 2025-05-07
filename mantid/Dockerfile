@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge:24.3.0-0
+FROM condaforge/miniforge3:25.3.0-1
 
 # Install mantid (in-container) dependencies
 RUN apt-get update && apt-get install libgl1 -y
