@@ -15,7 +15,7 @@ RUN conda init bash
 RUN echo "conda activate mantid" > ~/.bashrc
 ENV PATH /opt/conda/envs/mantid/bin:$PATH
 
-# Run the DownloadInstrument algorithm to get instrument definitions
+# Get the most recent instrument definitions from the main branch
 RUN rm -rf /opt/conda/envs/mantid/instrument
 RUN git clone https://github.com/mantidproject/mantid /tmp/mantid
 RUN cp -rf /tmp/mantid/instrument /opt/conda/envs/mantid/instrument
