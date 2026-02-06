@@ -87,7 +87,7 @@ jobs:
           path: llsp_repo
 
       - name: Update Dockerfile in Third Repo
-        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        # if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
           NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
           
