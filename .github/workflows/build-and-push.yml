@@ -78,6 +78,29 @@ jobs:
         with:
           cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "DEFAULT_RUNNER_SHA").value = "${{ steps.remove_sha256.outputs.digest }}")' './components/jobcreator/envs/staging/jobcreator.yml'
 
+      - name: Checkout the LLSP Repo
+        uses: actions/checkout@v4
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          repository: fiaisis/LLSP
+          token: ${{ secrets.GITOPS_STAGING_EDIT_TOKEN }}
+          path: llsp_repo
+
+      - name: Update Dockerfile in Third Repo
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        run: |
+          NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
+          
+          # Target the Dockerfile inside the subdirectory
+          sed -i "s|^FROM .*|FROM $NEW_IMAGE|" ./llsp_repo/LLSP-Worker/Dockerfile
+          
+          # Navigate in, commit, and push specifically for this repo
+          cd llsp_repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "[CD] Update base image to $NEW_IMAGE"
+          git push
+
       - name: Commit and push changes
         if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
