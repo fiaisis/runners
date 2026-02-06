@@ -117,7 +117,7 @@ jobs:
           cd llsp_repo
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -am "[CD] Update base image to $NEW_IMAGE"
+          git commit -am "[CD] Update base image for LLSP to $NEW_IMAGE"
           git push
 
       - name: Commit and push changes
