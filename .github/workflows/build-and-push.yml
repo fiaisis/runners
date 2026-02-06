@@ -1,10 +1,10 @@
 ---
 name: Check for new runners and build a new mantid one
 
-on:
-  schedule:
-    - cron: "18 14 * * *"
-  push:
+on: push
+  # schedule:
+  #   - cron: "18 14 * * *"
+  # push:
 
 env:
   REGISTRY: ghcr.io
@@ -87,7 +87,7 @@ jobs:
           path: llsp_repo
 
       - name: Update Dockerfile in Third Repo
-        # if: ${{ steps.latest_version.outputs.build_latest_version }}
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
           NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
           
