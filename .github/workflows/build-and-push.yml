@@ -86,13 +86,18 @@ jobs:
           token: ${{ secrets.GITOPS_STAGING_EDIT_TOKEN }}
           path: llsp_repo
 
-      - name: Update Dockerfile in Third Repo
-        # if: ${{ steps.latest_version.outputs.build_latest_version }}
+      - name: Update Dockerfile in LLSP
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
           NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
           
           # Target the Dockerfile inside the subdirectory
           sed -i "s|^FROM .*|FROM $NEW_IMAGE|" ./llsp_repo/LLSP-Worker/Dockerfile
+
+      - name: Commit and Push to LLSP
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        run: |
+          NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
           
           # Navigate in, commit, and push specifically for this repo
           cd llsp_repo
