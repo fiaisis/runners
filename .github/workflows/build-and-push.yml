@@ -24,20 +24,34 @@ jobs:
       - name: Find latest release, check if it's in the bash file, add a new one.
         id: latest_version
         run: |
-          # Get latest release
-          TAG=$(curl -s https://api.github.com/repos/mantidproject/mantid/releases/latest | jq -r '.tag_name')
-          TAG="${TAG:1}"
+          RESPONSE=$(curl -s https://api.github.com/repos/mantidproject/mantid/releases/latest)
           
-          # Get already made versions
+          TAG=$(echo "$RESPONSE" | jq -r '.tag_name // empty')
+
+          # Error handling: Exit if no valid tag found
+          if [[ -z "$TAG" || "$TAG" == "null" ]]; then
+            echo "::warning::No valid tag found (API returned '$TAG'). Skipping build."
+            echo "build_latest_version=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Strip 'v' prefix ONLY if present (e.g., v6.14.0 -> 6.14.0)
+          if [[ "$TAG" == v* ]]; then
+            TAG="${TAG:1}"
+          fi
+          
+          echo "Tag determined: $TAG"
+
           TOKEN=$(curl --location --request GET 'https://ghcr.io/token?scope=repository:fiaisis/mantid:pull' | jq -r '.token')
           CONTAINER_VERSIONS=$(curl --location --request GET 'https://ghcr.io/v2/fiaisis/mantid/tags/list' --header "Authorization: Bearer $TOKEN" | jq -r '.tags')
           
           echo "Versions found: $CONTAINER_VERSIONS, tag found: $TAG"
           
-          # If tag already in container versions end here, else build
           if [[ $CONTAINER_VERSIONS != *"$TAG"* ]]; then
+            echo "New version detected. Building $TAG."
             echo "build_latest_version=$TAG" >> "$GITHUB_OUTPUT"
           else
+            echo "Version $TAG already exists. Skipping."
             echo "build_latest_version=" >> "$GITHUB_OUTPUT"
           fi
 
