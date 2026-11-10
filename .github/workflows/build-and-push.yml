@@ -120,6 +120,39 @@ jobs:
           git commit -am "[CD] Update base image for LLSP to $NEW_IMAGE"
           git push
 
+      - name: Checkout the script analysis service
+        uses: actions/checkout@v4
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        with:
+          repository: fiaisis/mantid-python-script-lsp
+          token: ${{ secrets.GITOPS_STAGING_EDIT_TOKEN }}
+          path: lsp_repo
+
+      - name: Update Dockerfile in the script analysis service
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        run: |
+          sed -i -E "s|^ARG RUNNER_TAG=.*|ARG RUNNER_TAG=${{ steps.latest_version.outputs.build_latest_version }}|" ./lsp_repo/container/mantid_python_script_lsp.D
+          grep -n "^ARG RUNNER" ./lsp_repo/container/mantid_python_script_lsp.D
+
+      - name: Commit and Push to the script analysis service
+        if: ${{ steps.latest_version.outputs.build_latest_version }}
+        run: |
+          NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/mantid:${{ steps.latest_version.outputs.build_latest_version }}"
+
+          cd lsp_repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Skip quietly when the pin has not moved, rather than failing the run: a commit that pushes to
+          # this repo re-runs this workflow, and by then the pin is already current. That push matters, the
+          # analysis service publishes its own image and pins staging's digest when main moves.
+          if git diff --quiet -- container/mantid_python_script_lsp.D; then
+            echo "Base image already at $NEW_IMAGE; nothing to commit."
+          else
+            git commit -am "[CD] Update base image for mantid-python-script-lsp to $NEW_IMAGE"
+            git push
+          fi
+
       - name: Commit and push changes
         if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
