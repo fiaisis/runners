@@ -131,9 +131,6 @@ jobs:
       - name: Update Dockerfile in the script analysis service
         if: ${{ steps.latest_version.outputs.build_latest_version }}
         run: |
-          # That repo pins its base through build args (FROM ${RUNNER_IMAGE}:${RUNNER_TAG}), so the version
-          # to rewrite is the RUNNER_TAG default. Rewriting the FROM line the way the LLSP step above does
-          # would hard-code the image and leave RUNNER_TAG claiming a version the build no longer uses.
           sed -i -E "s|^ARG RUNNER_TAG=.*|ARG RUNNER_TAG=${{ steps.latest_version.outputs.build_latest_version }}|" ./lsp_repo/container/mantid_python_script_lsp.D
           grep -n "^ARG RUNNER" ./lsp_repo/container/mantid_python_script_lsp.D
 
